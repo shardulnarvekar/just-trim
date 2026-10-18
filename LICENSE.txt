@@ -1,0 +1,38 @@
+JUST TRIM - PROPRIETARY APPLICATION LICENSE
+Copyright (c) 2026 Shardul Narvekar. All rights reserved.
+Applies to the Just Trim application code and documentation in version 1.1.0
+and subsequent versions carrying this notice, to the extent protectable by law.
+
+1. Reserved rights
+Except as permitted by applicable law or by separate written permission from
+Shardul Narvekar, no permission is granted to use, reproduce, modify, distribute,
+sublicense, sell, or create derivative works of the application or its source.
+Possession of a copy or access to a private repository is not a general license.
+This notice does not restrict the rights holder's own use of the application.
+
+2. Third-party components
+This license applies only to the original Just Trim application material.
+Python, Qt, PySide6, Shiboken6, FFmpeg, PyInstaller, and other dependencies remain
+the property of their respective rights holders and are governed exclusively
+by their applicable licenses. See THIRD-PARTY-NOTICES.txt and licenses/.
+Nothing here limits rights granted by those licenses or by mandatory law.
+In particular, modification or replacement of LGPL-covered libraries and
+reverse engineering of this combined application for debugging modifications
+to those libraries are permitted as required by the LGPL. Compatible shared
+libraries may be replaced and the resulting application may be run.
+
+3. Previous versions and independent rights
+This license does not revoke rights already granted in an earlier version,
+including under the MIT license accompanying version 1.0. It does not claim
+ownership of third-party material, other people's independent implementations,
+or unprotectable ideas and functionality.
+
+4. Warranty and liability
+To the maximum extent permitted by applicable law, this software is provided
+AS IS, without warranties of any kind, express or implied, including fitness
+for a particular purpose, merchantability, or non-infringement. The rights
+holder is not liable for claims or losses arising from use of the software.
+Nothing in this notice excludes liability that cannot lawfully be excluded.
+
+For permission, contact Shardul Narvekar through:
+https://github.com/shardulnarvekar

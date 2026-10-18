@@ -1,0 +1,81 @@
+JUST TRIM — lossless MOV clips
+Version 1.1.0 | Windows 10 / 11, 64-bit | Shardul Narvekar
+
+RUN
+Double-click Just Trim.exe. No installation, Python, paid codec pack,
+account, or internet connection is required.
+Keep the _internal folder next to the EXE. If using the ZIP, extract the
+entire ZIP first; do not run from inside the ZIP viewer.
+
+USE
+1. Drag one .mov video from File Explorer onto the drop area, preview,
+   clip list, or anywhere in the app window. Open MOV also works.
+2. Find your starting point and click Set start (or press I).
+3. Find your ending point and click Set end (or press O).
+   You can also drag the blue IN/OUT handles or type times directly.
+4. Click Add clip. Repeat for as many clips as you want.
+5. Click Export MOV clips and choose a folder.
+
+Every checked row becomes a separate .mov file. Uncheck rows to skip them.
+If the clip list is empty, Export adds the current range automatically.
+Double-click a row to load its range. Remove selected only removes rows
+from the list, not files. Exports are never overwritten: a suffix is added
+if the filename is already taken.
+
+CONTROLS
+Space: play / pause                  I: mark start
+O: mark end                         A: add clip
+Left / right: seek about one frame   Ctrl+left / right: seek one second
+Keyframe buttons: seek to a lossless cut boundary
+Zoom range: enlarge the selected section of the timeline
+Play range: preview the actual export interval
+Times accept HH:MM:SS.mmm, MM:SS, or a number of seconds.
+
+WHAT IS PRESERVED
+The app copies compressed samples directly. It does not render, resize,
+recompress, convert to MP4, or change the video/audio codecs.
+All supported tracks are retained, including the Apple spatial-audio and
+metadata tracks in the tested iPhone 17 file. Original sample descriptions
+(including HDR/Dolby Vision information), orientation and recording
+metadata are retained. The MOV index and timing headers are rebuilt for
+the shorter duration, so the whole file is necessarily a new file.
+
+Each export is reread and checked against SHA-256 hashes of the copied
+source data before it appears as a completed MOV. The original is opened
+read-only. Cancellation removes an incomplete output and keeps completed
+clips. No videos or other data are uploaded.
+
+LOSSLESS CUT LIMIT
+Start/end times expand to surrounding video keyframes. Read the Actual
+export line before adding a clip. On the tested video these are about
+0.98 seconds apart; other recordings may differ. A sub-second selection
+can therefore produce a longer clip. Hidden audio pre-roll may also be
+retained so playback starts correctly. There is no frame-exact re-encode
+mode, because this app is specifically for keeping the original samples.
+
+IPHONE PLAYBACK
+The tested exports preserve all nine original tracks and decode on
+Windows with their original HDR video and stereo sound. Physical iPhone
+playback, Apple spatial-audio playback, and Apple Photos editing features
+could not be tested here. Check one exported clip on your iPhone before
+deleting irreplaceable originals. No software can guarantee every future
+iOS version. Windows preview colour may differ from your iPhone display;
+the exported HDR sample data is unchanged.
+
+SUPPORTED FILES
+Self-contained MOV files with one video track and conventional sample
+tables. Tested: the supplied 10 GB iPhone HEVC/Dolby Vision recording,
+H.264 with B-frames, HEVC with B-frames, silent MOV, and ProRes with PCM.
+The app stops with an explanation if it encounters unsupported structures,
+rather than silently discarding tracks. Fragmented, encrypted, external-
+reference, multi-view, or complex edited/slow-motion timelines are not
+supported by this version. Treat edited Cinematic/spatial recordings as
+unverified, even if their container can be read.
+
+YOUR COPY
+Shardul Narvekar is the project owner and maintainer. The source folder
+contains the Python code, README, build instructions and regression tests.
+Version 1.1.0 uses proprietary terms for the original application material;
+see LICENSE.txt. Third-party runtime libraries remain under their own
+licenses; see THIRD-PARTY-NOTICES.txt and licenses/.
+Ownership guidance and distribution requirements are in docs/.
