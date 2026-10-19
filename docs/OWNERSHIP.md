@@ -9,7 +9,9 @@ Copyright and contract rules depend on jurisdiction and the facts of creation.
 The README, proprietary application license, Windows executable metadata, and
 Git commit identity identify Shardul Narvekar as project owner/maintainer and
 the asserted rights holder for protectable original application material.
-The intended GitHub location is your personal account, with private visibility.
+The GitHub repository is https://github.com/shardulnarvekar/just-trim,
+public at your request. Only application source and project documentation are
+published; the portable runtime is provided separately for your personal use.
 There are no invented company registrations, signatures, assignments, or filings.
 
 These records document your claim and control of the project; they do not create
@@ -34,8 +36,8 @@ review notes, edits, and dated Git history. [U.S. Copyright Office report](https
 
 ## Keeping control
 
-- Keep the repository private and grant access only when necessary. A public
-  GitHub repository permits viewing and forking under GitHub's terms, even if
+- You chose public visibility. A public GitHub repository permits viewing and
+  forking under GitHub's terms, even if
   you do not choose an open-source license. [GitHub licensing guidance](https://docs.github.com/en/repositories/managing-your-repositorys-settings-and-features/customizing-your-repository/licensing-a-repository)
 - Use the proprietary license for new versions where you hold the relevant
   rights. Version 1.0 contained an MIT license: recipients who obtained valid

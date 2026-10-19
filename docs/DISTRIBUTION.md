@@ -1,8 +1,15 @@
 # Binary distribution and dependency rights
 
-This repository is prepared for the owner's private use and private backup.
-It is not a certification that the bundled app is cleared for public sale or
-distribution in every jurisdiction. No third-party copyright is reassigned.
+The application source repository is public at Shardul Narvekar's request.
+Its original application material retains the proprietary terms in LICENSE.txt.
+Public releases contain source only. The portable Windows package is supplied
+separately for the owner's personal use. Earlier bundled release assets are
+kept in a non-public draft release, not exposed through public downloads.
+
+The application licensing/attribution documents are in place. Compliance work
+for public distribution of bundled third-party runtimes is **not complete**.
+Do not describe the portable ZIP as cleared for public redistribution or sale.
+No third-party copyright is reassigned.
 
 ## Current package
 
@@ -14,6 +21,8 @@ distribution in every jurisdiction. No third-party copyright is reassigned.
 - The app's complete source and pinned direct build requirements are included.
 - The PyInstaller bootloader permits applications to use their own license
   under its exception. See the included PyInstaller notice.
+- Version 1.1.2 excludes unused Qt PDF, virtual-keyboard, QML, and Quick modules
+  and their entry-point plugins from the portable package.
 
 To use a compatible modified Qt/PySide/FFmpeg build, keep a backup of the app,
 replace the applicable DLLs/package files under `_internal` with an ABI-compatible

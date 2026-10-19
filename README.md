@@ -3,7 +3,12 @@
 A simple Windows application for cutting iPhone MOV recordings into separate
 clips while copying the original compressed media samples.
 
-**Project owner and maintainer: Shardul Narvekar** · **Version 1.1.1**
+**Project owner and maintainer: Shardul Narvekar** · **Version 1.1.2**
+
+Public source repository, with proprietary application terms. Public releases
+contain source only; the owner's portable Windows build is supplied separately.
+See [LICENSE.txt](LICENSE.txt) for permissions and [distribution notes](docs/DISTRIBUTION.md)
+for the bundled runtime requirements.
 
 ## Use it
 
@@ -48,8 +53,10 @@ Supported inputs are self-contained MOVs with one video track and conventional
 sample tables. Unsupported structures are rejected instead of silently dropping
 tracks. Fragmented/encrypted MOVs, external references, multiple video tracks,
 and complex slow-motion/edit timelines are outside this version's scope.
-An export also stops if a track has no media in the selected range, to avoid
-silently discarding that track.
+Sparse metadata tracks with no samples in the selected interval are retained
+as zero-duration, zero-sample tracks, including their original descriptions.
+No out-of-range metadata is moved into the clip. Missing video/audio still
+stops export rather than silently discarding a track.
 
 ## Controls
 
@@ -120,9 +127,14 @@ Third-party components retain their own licenses. See
 [ownership guidance](docs/OWNERSHIP.md). Earlier MIT grants, if any copies were
 shared under them, are not revoked by this version's licensing change.
 
-Keep this repository private for personal development. Before distributing the
-bundled binary to other people, complete the corresponding-source and notices
-requirements described in [DISTRIBUTION.md](docs/DISTRIBUTION.md).
+The repository is public at the owner's request. GitHub users may view and fork
+it under GitHub's terms; this does not grant an open-source application license.
+The original application license, attribution, and dependency notices are in
+place. Public distribution of bundled binaries is a separate, unfinished step:
+complete the corresponding-source and dependency-notice requirements in
+[DISTRIBUTION.md](docs/DISTRIBUTION.md) before doing that. No bundled binary is
+offered in the public releases.
 
 Recordings, private test exports, credentials, virtual environments, and build
-caches are excluded from Git. Release archives belong in GitHub Releases.
+caches and bundled runtimes are excluded from Git. `scripts/Publish-GitHub.ps1`
+publishes source tags/releases only and does not upload runtime archives.

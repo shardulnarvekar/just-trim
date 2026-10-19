@@ -19,7 +19,13 @@ a = Analysis(
 # Windows 10/11 already supply the Universal CRT and API-set DLLs.
 def keep_binary(entry):
     name = entry[0].replace('\\', '/').rsplit('/', 1)[-1].lower()
-    return not (name in ('icuuc.dll', 'ucrtbase.dll') or name.startswith(('icudt', 'api-ms-', 'ext-ms-')))
+    # The widget app does not use Qt's virtual keyboard, QML, or PDF plugins.
+    # PyInstaller otherwise collects them indirectly with QtGui. In particular,
+    # do not ship GPL-only optional modules in this proprietary app's package.
+    unused = ('qtvirtualkeyboardplugin.dll', 'qt6virtualkeyboard.dll',
+              'qpdf.dll', 'qt6pdf.dll')
+    return not (name in ('icuuc.dll', 'ucrtbase.dll') + unused
+                or name.startswith(('icudt', 'api-ms-', 'ext-ms-', 'qt6qml', 'qt6quick')))
 a.binaries = [entry for entry in a.binaries if keep_binary(entry)]
 pyz = PYZ(a.pure)
 

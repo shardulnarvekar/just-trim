@@ -175,7 +175,7 @@ class Track:
             raise MovieError('This MOV references media outside the file.')
         sz = one(self.stbl, b'stsz').data
         fixed, self.count = struct.unpack_from('>II', sz, 4)
-        if self.count == 0 or self.count > 5_000_000:
+        if (self.count == 0 and self.handler != b'meta') or self.count > 5_000_000:
             raise MovieError('Empty, fragmented, or excessively large sample index is unsupported.')
         if (fixed and len(sz) != 12) or (not fixed and len(sz) != 12 + self.count*4):
             raise MovieError('Invalid sample-size table.')
@@ -197,7 +197,8 @@ class Track:
             raise MovieError('Invalid composition-time table.')
         sync = [a for a in self.stbl if a.kind == b'stss']
         self.sync = [x[0]-1 for x in struct.iter_unpack('>I', sync[0].data[8:])] if sync else list(range(self.count))
-        if not self.sync or self.sync != sorted(set(self.sync)) or self.sync[0] < 0 or self.sync[-1] >= self.count:
+        if ((self.count and not self.sync) or self.sync != sorted(set(self.sync))
+                or (self.sync and (self.sync[0] < 0 or self.sync[-1] >= self.count))):
             raise MovieError('Invalid sync sample table.')
         self.media_start = 0
         self.delay = Fraction(0)
@@ -211,6 +212,8 @@ class Track:
             if len(edits) != u32(e, 4):
                 raise MovieError('Invalid edit list.')
             if edits and edits[0][1] == -1:
+                if edits[0][0] <= 0 or edits[0][2:] != (1, 0):
+                    raise MovieError('Invalid empty edit.')
                 self.delay = Fraction(edits.pop(0)[0], movie_scale)
             if len(edits) != 1 or edits[0][1] < 0 or edits[0][2:] != (1, 0):
                 raise MovieError('Slow-motion or multi-edit MOVs need a different workflow; this app will not flatten them.')
@@ -224,7 +227,8 @@ class Track:
             raise MovieError('Invalid chunk count.')
         sc = one(self.stbl, b'stsc').data
         entries = list(struct.iter_unpack('>III', sc[8:]))
-        if not entries or len(entries) != u32(sc, 4) or entries[0][0] != 1:
+        if (len(entries) != u32(sc, 4) or (self.count and (not entries or entries[0][0] != 1))
+                or (not self.count and (entries or offsets))):
             raise MovieError('Invalid sample-to-chunk table.')
         self.chunks = []
         sample = j = 0
@@ -384,12 +388,21 @@ class Movie:
                 if t.handler == b'soun':
                     first = max(0, first-2)
                     first = t.sync[max(0, bisect.bisect_right(t.sync, first)-1)]
-            if stop <= first or target_end <= 0 or target >= t.dts[-1]:
-                raise MovieError(f'Track {t.id} has no media in this range. Export stopped to avoid dropping a track.')
-            delay = max(Fraction(0), t.shift-start)
-            empty = round(delay*self.scale)
-            media_time = max(0, round(target-t.dts[first]))
-            seg = Segment(t, first, stop, media_time, empty, duration)
+            inactive = stop <= first or target_end <= 0 or target >= t.dts[-1]
+            if inactive:
+                if t.handler != b'meta':
+                    raise MovieError(f'Track {t.id} has no media in this range. Export stopped to avoid dropping a track.')
+                # Preserve a sparse metadata track's identity and descriptions
+                # with zero samples when none overlap the clip. Do not stretch
+                # old metadata into the cut or invent a trailing empty edit
+                # (which QuickTime forbids). A zero-duration track is implicit
+                # empty space for the rest of the movie.
+                first = stop = media_time = empty = 0
+            else:
+                delay = max(Fraction(0), t.shift-start)
+                empty = round(delay*self.scale)
+                media_time = max(0, round(target-t.dts[first]))
+            seg = Segment(t, first, stop, media_time, empty, 0 if inactive else duration)
             for c in t.chunks:
                 lo, hi = max(c.first, first), min(c.first+c.count, stop)
                 if lo < hi:
@@ -420,7 +433,7 @@ class Movie:
                 v = box(k, d[:4]+struct.pack('>I', len(indices))+b''.join(struct.pack('>I', i) for i in indices))
             elif k == b'stsz':
                 sizes = t.sizes[lo:hi]
-                fixed = sizes[0] if len(set(sizes)) == 1 and sizes[0] else 0
+                fixed = sizes[0] if sizes and len(set(sizes)) == 1 and sizes[0] else 0
                 v = box(k, bytes(4)+struct.pack('>II', fixed, len(sizes)) +
                         (b'' if fixed else b''.join(struct.pack('>I', i) for i in sizes)))
             elif k == b'stsc':
@@ -456,12 +469,13 @@ class Movie:
         entries = []
         if seg.empty_duration:
             entries.append((seg.empty_duration, -1, 1, 0))
-        entries.append((seg.movie_duration-seg.empty_duration, seg.media_time, 1, 0))
+        if seg.empty_duration < seg.movie_duration:
+            entries.append((seg.movie_duration-seg.empty_duration, seg.media_time, 1, 0))
         elst = box(b'elst', b'\x01\0\0\0'+struct.pack('>I', len(entries))+
                    b''.join(struct.pack('>Qqhh', *e) for e in entries))
-        edts = box(b'edts', elst)
+        edts = box(b'edts', elst) if hi > lo else None
         replaced = rebuild(t.children, {b'mdia': mdia, b'tkhd': duration_box(t.tkhd, seg.movie_duration), b'edts': edts})
-        if not any(a.kind == b'edts' for a in t.children):
+        if edts is not None and not any(a.kind == b'edts' for a in t.children):
             replaced += edts
         return box(b'trak', replaced)
 

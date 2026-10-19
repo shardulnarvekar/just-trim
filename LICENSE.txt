@@ -1,14 +1,17 @@
 JUST TRIM - PROPRIETARY APPLICATION LICENSE
 Copyright (c) 2026 Shardul Narvekar. All rights reserved.
-Applies to the Just Trim application code and documentation in version 1.1.1
+Applies to the Just Trim application code and documentation in version 1.1.2
 and subsequent versions carrying this notice, to the extent protectable by law.
 
 1. Reserved rights
 Except as permitted by applicable law or by separate written permission from
 Shardul Narvekar, no permission is granted to use, reproduce, modify, distribute,
 sublicense, sell, or create derivative works of the application or its source.
-Possession of a copy or access to a private repository is not a general license.
+Possession of a copy or access to a repository is not a general license.
 This notice does not restrict the rights holder's own use of the application.
+Public hosting does not restrict viewing and forking rights granted by GitHub's
+Terms of Service. No additional application-use or redistribution permission
+is granted by making the repository public.
 
 2. Third-party components
 This license applies only to the original Just Trim application material.

@@ -1,11 +1,14 @@
 JUST TRIM — lossless MOV clips
-Version 1.1.1 | Windows 10 / 11, 64-bit | Shardul Narvekar
+Version 1.1.2 | Windows 10 / 11, 64-bit | Shardul Narvekar
 
 RUN
 Double-click Just Trim.exe. No installation, Python, paid codec pack,
 account, or internet connection is required.
 Keep the _internal folder next to the EXE. If using the ZIP, extract the
 entire ZIP first; do not run from inside the ZIP viewer.
+Use a new empty folder when replacing an older version; do not merge folders.
+After the new copy works, you may delete the older application folders/ZIPs.
+Keep your original videos and exported clips; they are not application files.
 
 USE
 1. Drag one .mov video from File Explorer onto the drop area, preview,
@@ -75,7 +78,9 @@ unverified, even if their container can be read.
 YOUR COPY
 Shardul Narvekar is the project owner and maintainer. The source folder
 contains the Python code, README, build instructions and regression tests.
-Version 1.1.1 uses proprietary terms for the original application material;
+Version 1.1.2 uses proprietary terms for the original application material;
 see LICENSE.txt. Third-party runtime libraries remain under their own
 licenses; see THIRD-PARTY-NOTICES.txt and licenses/.
 Ownership guidance and distribution requirements are in docs/.
+The GitHub source repository is public. This bundled runtime is supplied for
+the owner's personal use; it is not a public binary distribution release.

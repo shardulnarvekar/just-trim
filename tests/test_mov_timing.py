@@ -68,6 +68,35 @@ def fixture(path, brand=b'qt  ', ctts_version=0, cslg_version=0):
     path.write_bytes(ftyp+box(b'mdat', media)+box(b'moov', box(b'mvhd', mvhd)+trak))
 
 
+def add_sparse_track(path, handler=b'meta', delay=0, empty_only=False):
+    """A single metadata sample lasting 0.05 s in a 1.2 s video."""
+    top = atoms(path.read_bytes())
+    tkhd, mdhd = bytearray(84), bytearray(24)
+    struct.pack_into('>I', tkhd, 12, 2)
+    struct.pack_into('>I', tkhd, 20, 120)
+    struct.pack_into('>II', mdhd, 12, 100, 5)
+    stbl = box(b'stbl', b''.join([
+        box(b'stsd', bytes(4)+struct.pack('>I', 1)+box(b'mebx', bytes(6)+b'\0\1')),
+        runbox(b'stts', [5]),
+        box(b'stsz', struct.pack('>III', 0, 1, 1)),
+        box(b'stsc', struct.pack('>IIIII', 0, 1, 1, 1, 1)),
+        box(b'stco', struct.pack('>III', 0, 1, len(top[0].encode())+8)),
+    ]))
+    dref = box(b'dref', struct.pack('>II', 0, 1)+box(b'url ', b'\0\0\0\1'))
+    mdia = box(b'mdia', box(b'mdhd', mdhd)+box(b'hdlr', bytes(8)+handler+bytes(12))
+               +box(b'minf', box(b'dinf', dref)+stbl))
+    edts = b''
+    if delay or empty_only:
+        edits = [(120 if empty_only else delay, -1, 1, 0)]
+        if not empty_only:
+            edits.append((5, 0, 1, 0))
+        edts = box(b'edts', box(b'elst', struct.pack('>II', 0, len(edits))
+                   +b''.join(struct.pack('>Iihh', *e) for e in edits)))
+    trak = box(b'trak', box(b'tkhd', tkhd)+mdia+edts)
+    path.write_bytes(b''.join(box(a.kind, a.data+trak) if a.kind == b'moov'
+                              else a.encode() for a in top))
+
+
 class TimingTests(unittest.TestCase):
     def setUp(self):
         self.tmp = tempfile.TemporaryDirectory(dir=os.environ.get('JUSTTRIM_TEST_TMP'))
@@ -124,6 +153,52 @@ class TimingTests(unittest.TestCase):
         a = compact(4, [([1, 2], 3)])
         self.assertEqual(decode_compact(atoms(compact_slice(a, 2, 6, 6))[0]), [1])
         self.assertEqual(decode_compact(atoms(compact_slice(a, 4, 6, 6))[0]), [])
+
+    def test_sparse_metadata_after_end_retained_but_not_presented(self):
+        fixture(self.source)
+        add_sparse_track(self.source)
+        original = self.source.read_bytes()
+        output = Path(self.tmp.name)/'sparse.mov'
+        Movie(self.source).export(.65, 1.1, output)
+        clip = Movie(output)
+        metadata = clip.tracks[1]
+        self.assertEqual(len(clip.tracks), 2)
+        self.assertEqual(metadata.count, 0)
+        self.assertEqual(metadata.durations, [])
+        self.assertEqual(metadata.chunks, [])
+        self.assertFalse(any(a.kind == b'edts' for a in metadata.children))
+        self.assertEqual(struct.unpack_from('>I', metadata.tkhd.data, 20)[0], 0)
+        self.assertEqual(metadata.stsd.data, Movie(self.source).tracks[1].stsd.data)
+        retrim = Path(self.tmp.name)/'retrim.mov'
+        clip.export(.1, .5, retrim)
+        self.assertEqual(Movie(retrim).tracks[1].count, 0)
+        self.assertEqual(self.source.read_bytes(), original)
+
+    def test_sparse_metadata_before_start_retained_but_not_presented(self):
+        fixture(self.source)
+        add_sparse_track(self.source, delay=100)
+        output = Path(self.tmp.name)/'before.mov'
+        Movie(self.source).export(.1, .5, output)
+        self.assertEqual(Movie(output).tracks[1].count, 0)
+
+    def test_overlapping_metadata_remains_active(self):
+        fixture(self.source)
+        add_sparse_track(self.source)
+        output = Path(self.tmp.name)/'overlap.mov'
+        Movie(self.source).export(0, .5, output)
+        self.assertEqual(Movie(output).tracks[1].count, 1)
+
+    def test_missing_audio_still_rejected(self):
+        fixture(self.source)
+        add_sparse_track(self.source, handler=b'soun')
+        with self.assertRaisesRegex(MovieError, 'no media'):
+            Movie(self.source).plan(.65, 1.1)
+
+    def test_empty_only_audio_not_treated_as_metadata(self):
+        fixture(self.source)
+        add_sparse_track(self.source, handler=b'soun', empty_only=True)
+        with self.assertRaisesRegex(MovieError, 'multi-edit'):
+            Movie(self.source)
 
 
 if __name__ == '__main__':
