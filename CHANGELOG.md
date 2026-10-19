@@ -1,5 +1,14 @@
 # Changelog
 
+## 1.1.1 — 2026-10-19
+
+- Accept the optional QuickTime `cslg` timing summary when opening recordings and
+  omit it from exported clips. Keep the actual per-frame timing tables.
+- Interpret signed QuickTime version-zero composition offsets correctly.
+- Preserve Apple sample-group associations when a cut crosses a repeated
+  pattern, including implicit trailing groups.
+- Add synthetic timing and sample-group regression fixtures.
+
 ## 1.1.0 — 2026-10-18
 
 - Accept MOV drops across the preview, clip list, timeline, text fields, and window.

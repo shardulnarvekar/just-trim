@@ -1,6 +1,6 @@
 JUST TRIM - PROPRIETARY APPLICATION LICENSE
 Copyright (c) 2026 Shardul Narvekar. All rights reserved.
-Applies to the Just Trim application code and documentation in version 1.1.0
+Applies to the Just Trim application code and documentation in version 1.1.1
 and subsequent versions carrying this notice, to the extent protectable by law.
 
 1. Reserved rights

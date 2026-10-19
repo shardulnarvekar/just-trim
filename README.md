@@ -3,7 +3,7 @@
 A simple Windows application for cutting iPhone MOV recordings into separate
 clips while copying the original compressed media samples.
 
-**Project owner and maintainer: Shardul Narvekar** · **Version 1.1.0**
+**Project owner and maintainer: Shardul Narvekar** · **Version 1.1.1**
 
 ## Use it
 
@@ -30,6 +30,10 @@ The tested 10 GB iPhone recording has nine tracks, including HEVC/Dolby Vision,
 stereo sound, Apple spatial audio, and metadata. All nine are retained. Preview
 uses Qt's FFmpeg backend; export uses the app's direct QuickTime sample copier.
 
+Version 1.1.1 also accepts recordings with an optional `cslg` timing summary.
+Exports omit that summary while preserving the actual per-frame timing and
+sample-group associations, including signed QuickTime composition offsets.
+
 ## Lossless cut boundaries and compatibility
 
 Cuts expand to surrounding video keyframes. The **Actual export** line shows
@@ -44,6 +48,8 @@ Supported inputs are self-contained MOVs with one video track and conventional
 sample tables. Unsupported structures are rejected instead of silently dropping
 tracks. Fragmented/encrypted MOVs, external references, multiple video tracks,
 and complex slow-motion/edit timelines are outside this version's scope.
+An export also stops if a track has no media in the selected range, to avoid
+silently discarding that track.
 
 ## Controls
 
@@ -98,6 +104,7 @@ The source file is opened read-only. Use a new output directory for each run.
 | `src/movcut.py` | Conservative MOV parser, sample copier, and verification |
 | `src/selfcheck.py` | Opt-in packaged application smoke test |
 | `tests/test_drop.py` | Drag-and-drop regression tests |
+| `tests/test_mov_timing.py` | Timing and sample-group regression fixtures |
 | `scripts/package.py` | Package runtime, source, documentation, and licenses |
 
 ## Ownership and licensing

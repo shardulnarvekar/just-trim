@@ -137,7 +137,7 @@ class Chunk:
 
 
 class Track:
-    def __init__(self, atom, movie_scale, media_ranges):
+    def __init__(self, atom, movie_scale, media_ranges, quicktime=False):
         self.atom = atom
         self.children = atoms(atom.data)
         self.tkhd = one(self.children, b'tkhd')
@@ -152,7 +152,7 @@ class Track:
         self.stbl = atoms(one(self.minf, b'stbl').data)
         supported = {b'stsd', b'stts', b'ctts', b'stss', b'stps', b'stsh', b'stsc',
                      b'stsz', b'stco', b'co64', b'sdtp', b'sgpd', b'sbgp', b'csgm',
-                     b'free', b'wide'}
+                     b'cslg', b'free', b'wide'}
         unsupported = {a.kind for a in self.stbl} - supported
         if unsupported or any(a.kind == b'stsh' for a in self.stbl):
             raise MovieError(f'Track {self.id} uses an unsupported sample table: '
@@ -187,7 +187,12 @@ class Track:
         for d in self.durations:
             self.dts.append(self.dts[-1] + d)
         ctts = [a for a in self.stbl if a.kind == b'ctts']
-        self.ctts = expand(ctts[0].data, signed=ctts[0].data[0] == 1) if ctts else [0]*self.count
+        if len(ctts) > 1 or (ctts and (len(ctts[0].data) < 8 or ctts[0].data[0] not in (0, 1))):
+            raise MovieError('Invalid composition-time table version.')
+        # QuickTime uses signed offsets even in version 0 (including iPhone
+        # recordings). ISO BMFF version 0 is unsigned; do not change its meaning.
+        self.ctts_signed = bool(ctts and (quicktime or ctts[0].data[0] == 1))
+        self.ctts = expand(ctts[0].data, signed=self.ctts_signed) if ctts else [0]*self.count
         if len(self.ctts) != self.count:
             raise MovieError('Invalid composition-time table.')
         sync = [a for a in self.stbl if a.kind == b'stss']
@@ -253,10 +258,7 @@ class Segment:
 
 
 def compact_slice(a, first, stop, count):
-    """Preserve Apple's compact group patterns exactly, only at whole-pattern boundaries.
-
-    No interpretation of proprietary group descriptions or partial patterns.
-    """
+    """Slice repeated sample-group indices, retaining their opaque descriptions."""
     d = a.data
     if len(d) < 20 or d[:4] != bytes(4) or u32(d, 8) != 0:
         raise MovieError('Unsupported Apple compact sample grouping.')
@@ -264,35 +266,32 @@ def compact_slice(a, first, stop, count):
     if bits not in (4, 8, 16, 32) or len(d) < 20+n*8:
         raise MovieError('Unsupported compact grouping width.')
     pairs = list(struct.iter_unpack('>II', d[20:20+n*8]))
-    if sum(c for _, c in pairs) != count:
-        raise MovieError('Compact grouping does not cover the track.')
+    if any(p <= 0 or c < p for p, c in pairs) or sum(c for _, c in pairs) > count:
+        raise MovieError('Invalid compact grouping sample count.')
     total_indices = sum(p for p, _ in pairs)
     tail = d[20+n*8:]
     if len(tail) != (total_indices*bits+7)//8:
         raise MovieError('Invalid compact grouping payload.')
     sample = index = 0
     selected = []
-    index_first = index_stop = None
-    for pattern, samples in pairs:
-        if first <= sample and sample+samples <= stop:
-            if index_first is None:
-                index_first = index
-            selected.append((pattern, samples))
-            index_stop = index+pattern
-        elif sample < stop and sample+samples > first:
-            raise MovieError('This cut crosses an Apple compact-group boundary. Choose another keyframe.')
-        sample += samples
-        index += pattern
-    if not selected:
-        raise MovieError('Empty Apple sample group.')
-    # Bit slicing also handles odd nibble boundaries without changing pattern values.
     values = []
-    for i in range(index_first, index_stop):
+    def value_at(i):
         bit = i*bits
         if bits == 4:
-            values.append((tail[bit//8] >> (4 if bit%8 == 0 else 0)) & 15)
-        else:
-            values.append(int.from_bytes(tail[bit//8:bit//8+bits//8], 'big'))
+            return (tail[bit//8] >> (4 if bit%8 == 0 else 0)) & 15
+        return int.from_bytes(tail[bit//8:bit//8+bits//8], 'big')
+    for pattern, samples in pairs:
+        lo, hi = max(first, sample), min(stop, sample+samples)
+        if lo < hi:
+            # A cut may begin mid-cycle. Rotate the repeated pattern to the
+            # selected sample and shorten it if less than a full cycle remains.
+            width = min(pattern, hi-lo)
+            selected.append((width, hi-lo))
+            values.extend(value_at(index+(lo-sample+j)%pattern) for j in range(width))
+        sample += samples
+        index += pattern
+    # Unmapped trailing samples retain their implicit/default group association.
+    # Repack odd nibble boundaries without changing any group index.
     if bits == 4:
         packed = bytes((values[i] << 4) | (values[i+1] if i+1 < len(values) else 0) for i in range(0, len(values), 2))
     else:
@@ -341,7 +340,11 @@ class Movie:
         if not self.scale:
             raise MovieError('Invalid movie timescale.')
         self.duration = Fraction(ticks, self.scale)
-        self.tracks = [Track(a, self.scale, self.media_ranges) for a in self.moov if a.kind == b'trak']
+        ftyp = next((a.data for a in self.top if a.kind == b'ftyp'), None)
+        quicktime = ftyp is None or ftyp[:4] == b'qt  ' or b'qt  ' in [
+            ftyp[i:i+4] for i in range(8, len(ftyp), 4)]
+        self.tracks = [Track(a, self.scale, self.media_ranges, quicktime)
+                       for a in self.moov if a.kind == b'trak']
         videos = [t for t in self.tracks if t.handler == b'vide']
         if len(videos) != 1:
             raise MovieError('This version supports one video track per MOV. Multi-view video is not supported.')
@@ -406,7 +409,11 @@ class Movie:
             if k == b'stts':
                 v = runbox(k, t.durations[lo:hi])
             elif k == b'ctts':
-                v = runbox(k, t.ctts[lo:hi], d[:4], d[0] == 1)
+                v = runbox(k, t.ctts[lo:hi], d[:4], t.ctts_signed)
+            elif k == b'cslg':
+                # Optional summary of the full source's composition timeline.
+                # Readers can derive it from stts/ctts; omit it for trimmed clips.
+                continue
             elif k in (b'stss', b'stps'):
                 indices = [x[0] for x in struct.iter_unpack('>I', d[8:])]
                 indices = [i-lo for i in indices if lo < i <= hi]
@@ -434,8 +441,8 @@ class Movie:
                     raise MovieError('Unsupported sample group version.')
                 offset = 12 if d[0] == 0 else 16
                 values = expand(d, offset)
-                if len(values) != t.count:
-                    raise MovieError('Sample group does not cover the track.')
+                if len(values) > t.count:
+                    raise MovieError('Sample group exceeds the track sample count.')
                 v = runbox(k, values[lo:hi], d[:offset-4])
             elif k == b'csgm':
                 v = compact_slice(a, lo, hi, t.count)

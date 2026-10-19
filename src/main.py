@@ -582,7 +582,7 @@ def main():
     app = QApplication(sys.argv)
     app.setApplicationName('Just Trim')
     app.setOrganizationName('Shardul Narvekar')
-    app.setApplicationVersion('1.1.0')
+    app.setApplicationVersion('1.1.1')
     app.setStyle('Fusion')
     palette = QPalette()
     palette.setColor(QPalette.ColorRole.Window,QColor('#f5f5f5'))

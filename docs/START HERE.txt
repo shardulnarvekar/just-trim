@@ -1,5 +1,5 @@
 JUST TRIM — lossless MOV clips
-Version 1.1.0 | Windows 10 / 11, 64-bit | Shardul Narvekar
+Version 1.1.1 | Windows 10 / 11, 64-bit | Shardul Narvekar
 
 RUN
 Double-click Just Trim.exe. No installation, Python, paid codec pack,
@@ -75,7 +75,7 @@ unverified, even if their container can be read.
 YOUR COPY
 Shardul Narvekar is the project owner and maintainer. The source folder
 contains the Python code, README, build instructions and regression tests.
-Version 1.1.0 uses proprietary terms for the original application material;
+Version 1.1.1 uses proprietary terms for the original application material;
 see LICENSE.txt. Third-party runtime libraries remain under their own
 licenses; see THIRD-PARTY-NOTICES.txt and licenses/.
 Ownership guidance and distribution requirements are in docs/.
